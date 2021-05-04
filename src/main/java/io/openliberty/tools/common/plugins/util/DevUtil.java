@@ -89,7 +89,7 @@ import io.openliberty.tools.ant.ServerTask;
  */
 public abstract class DevUtil extends AbstractContainerSupportUtil {
 
-    private static final String START_SERVER_MESSAGE_PREFIX = "CWWKF0011I:";
+	private static final String START_SERVER_MESSAGE_PREFIX = "CWWKF0011I:";
     private static final String START_APP_MESSAGE_REGEXP = "CWWKZ0001I.*";
     private static final String UPDATED_APP_MESSAGE_REGEXP = "CWWKZ0003I.*";
     private static final String PORT_IN_USE_MESSAGE_PREFIX = "CWWKO0221E:";
@@ -271,6 +271,7 @@ public abstract class DevUtil extends AbstractContainerSupportUtil {
 
     private File serverDirectory;
     private File sourceDirectory;
+    private List<Path> webResourceDirs;
     private File testSourceDirectory;
     private File configDirectory;
     private File projectDirectory;
@@ -338,61 +339,76 @@ public abstract class DevUtil extends AbstractContainerSupportUtil {
     protected AtomicBoolean serverFullyStarted;
     private final File buildDirectory;
 
+	/**
+	 * @deprecated Use {@link #DevUtil(DevUtilConfig)} instead
+	 */
     public DevUtil(File buildDirectory, File serverDirectory, File sourceDirectory, File testSourceDirectory, File configDirectory, File projectDirectory, File multiModuleProjectDirectory,
             List<File> resourceDirs, boolean hotTests, boolean skipTests, boolean skipUTs, boolean skipITs,
             String applicationId, long serverStartTimeout, int appStartupTimeout, int appUpdateTimeout,
             long compileWaitMillis, boolean libertyDebug, boolean useBuildRecompile, boolean gradle, boolean pollingTest,
             boolean container, File dockerfile, File dockerBuildContext, String dockerRunOpts, int dockerBuildTimeout, boolean skipDefaultPorts, 
             JavaCompilerOptions compilerOptions, boolean keepTempDockerfile, String mavenCacheLocation) {
-        this.buildDirectory = buildDirectory;
-        this.serverDirectory = serverDirectory;
-        this.sourceDirectory = sourceDirectory;
-        this.testSourceDirectory = testSourceDirectory;
-        this.configDirectory = configDirectory;
-        this.projectDirectory = projectDirectory;
-        this.multiModuleProjectDirectory = multiModuleProjectDirectory;
-        this.resourceDirs = resourceDirs;
-        this.hotTests = hotTests;
-        this.skipTests = skipTests;
-        this.skipUTs = skipUTs;
-        this.skipITs = skipITs;
-        this.applicationId = applicationId;
-        this.serverStartTimeout = serverStartTimeout;
-        this.appStartupTimeout = appStartupTimeout;
-        this.appUpdateTimeout = appUpdateTimeout;
+    	
+    	this(new DevUtilConfig().
+    			setBuildDirectory(buildDirectory).setServerDirectory(serverDirectory).setSourceDirectory(sourceDirectory).setTestSourceDirectory(testSourceDirectory).setConfigDirectory(configDirectory).setProjectDirectory(projectDirectory).
+    			setMultiModuleProjectDirectory(multiModuleProjectDirectory).setResourceDirs(resourceDirs).setHotTests(hotTests).setSkipTests(skipTests).setSkipUTs(skipUTs).setSkipITs(skipITs).setApplicationId(applicationId).setServerStartTimeout(serverStartTimeout).
+    			setAppStartupTimeout(appStartupTimeout).setAppUpdateTimeout(appUpdateTimeout).setCompileWaitMillis(compileWaitMillis).setLibertyDebug(libertyDebug).setUseBuildRecompile(useBuildRecompile).setGradle(gradle).setPollingTest(pollingTest).
+    			setContainer(container).setDockerfile(dockerfile).setDockerBuildContext(dockerBuildContext).setDockerRunOpts(dockerRunOpts).setDockerBuildTimeout(dockerBuildTimeout).setSkipDefaultPorts(skipDefaultPorts).
+    			setCompilerOptions(compilerOptions).setKeepTempDockerfile(keepTempDockerfile).setMavenCacheLocation(mavenCacheLocation));
+    }
+    
+
+    public DevUtil(DevUtilConfig parameterObject) {
+        this.buildDirectory = parameterObject.buildDirectory;
+        this.serverDirectory = parameterObject.serverDirectory;
+        this.sourceDirectory = parameterObject.sourceDirectory;
+        this.webResourceDirs = parameterObject.webResourceDirs;
+        this.testSourceDirectory = parameterObject.testSourceDirectory;
+        this.configDirectory = parameterObject.configDirectory;
+        this.projectDirectory = parameterObject.projectDirectory;
+        this.multiModuleProjectDirectory = parameterObject.multiModuleProjectDirectory;
+        this.resourceDirs = parameterObject.resourceDirs;
+        this.hotTests = parameterObject.hotTests;
+        this.skipTests = parameterObject.skipTests;
+        this.skipUTs = parameterObject.skipUTs;
+        this.skipITs = parameterObject.skipITs;
+        this.applicationId = parameterObject.applicationId;
+        this.serverStartTimeout = parameterObject.serverStartTimeout;
+        this.appStartupTimeout = parameterObject.appStartupTimeout;
+        this.appUpdateTimeout = parameterObject.appUpdateTimeout;
         this.devStop = new AtomicBoolean(false);
-        this.compileWaitMillis = compileWaitMillis;
+        this.compileWaitMillis = parameterObject.compileWaitMillis;
         this.inputUnavailable = new AtomicBoolean(false);
-        this.libertyDebug = libertyDebug;
+        this.libertyDebug = parameterObject.libertyDebug;
         this.detectedAppStarted = new AtomicBoolean(false);
-        this.useBuildRecompile = useBuildRecompile;
+        this.useBuildRecompile = parameterObject.useBuildRecompile;
         this.calledShutdownHook = new AtomicBoolean(false);
-        this.gradle = gradle;
+        this.gradle = parameterObject.gradle;
         this.fileObservers = new HashSet<FileAlterationObserver>();
         this.newFileObservers = new HashSet<FileAlterationObserver>();
         this.cancelledFileObservers = new HashSet<FileAlterationObserver>();
         this.pollingInterval = 100;
-        if (pollingTest) {
+        if (parameterObject.pollingTest) {
             this.trackingMode = FileTrackMode.POLLING;
         } else {
             this.trackingMode = FileTrackMode.NOT_SET;
         }
-        this.container = container;
-        this.dockerfile = dockerfile;
-        this.dockerBuildContext = dockerBuildContext;
-        this.dockerRunOpts = dockerRunOpts;
-        if (projectDirectory != null) {
-            this.defaultDockerfile = new File(projectDirectory, "Dockerfile");
+        this.container = parameterObject.container;
+        this.dockerfile = parameterObject.dockerfile;
+        this.dockerBuildContext = parameterObject.dockerBuildContext;
+        this.dockerRunOpts = parameterObject.dockerRunOpts;
+        if (parameterObject.projectDirectory != null) {
+            this.defaultDockerfile = new File(parameterObject.projectDirectory, "Dockerfile");
         }
-        if (dockerBuildTimeout < 1) {
+        if (parameterObject.dockerBuildTimeout < 1) {
             this.dockerBuildTimeout = 600;
         } else {
-            this.dockerBuildTimeout = dockerBuildTimeout;
+            this.dockerBuildTimeout = parameterObject.dockerBuildTimeout;
         }
-        this.skipDefaultPorts = skipDefaultPorts;
-        this.compilerOptions = compilerOptions;
-        this.keepTempDockerfile = keepTempDockerfile;
-        this.mavenCacheLocation = mavenCacheLocation;
+        this.skipDefaultPorts = parameterObject.skipDefaultPorts;
+        this.compilerOptions = parameterObject.compilerOptions;
+        this.keepTempDockerfile = parameterObject.keepTempDockerfile;
+        this.mavenCacheLocation = parameterObject.mavenCacheLocation;
         this.externalContainerShutdown = new AtomicBoolean(false);
         this.shownFeaturesShWarning = new AtomicBoolean(false);
         this.hasFeaturesSh = new AtomicBoolean(false);
@@ -1056,6 +1072,17 @@ public abstract class DevUtil extends AbstractContainerSupportUtil {
             return false;
         }
         return true;
+    }
+
+    /**
+     * 
+     * The intention here is to give a chance to run logic for an app update
+     * but not necessarily a full re-deploy
+     * 
+     * @throws PluginExecutionException
+     */
+    protected void updateLooseApp() throws PluginExecutionException {
+    	// no-op - placeholder to override
     }
 
     protected File prepareTempDockerfile(File dockerfile, String buildContextString) throws PluginExecutionException {
@@ -2336,6 +2363,7 @@ public abstract class DevUtil extends AbstractContainerSupportUtil {
     Collection<File> failedCompilationJavaTests;
     long lastJavaSourceChange;
     long lastJavaTestChange;
+    boolean triggerAppRefresh;
     boolean triggerJavaSourceRecompile;
     boolean triggerJavaTestRecompile;
     File outputDirectory;
@@ -2365,8 +2393,7 @@ public abstract class DevUtil extends AbstractContainerSupportUtil {
      * @param jvmOptionsFile
      * @throws Exception
      */
-    public void watchFiles(File buildFile, File outputDirectory, File testOutputDirectory,
-            final ThreadPoolExecutor executor, List<String> compileArtifactPaths, List<String> testArtifactPaths, File serverXmlFile,
+    public void watchFiles(File buildFile, File outputDirectory, File testOutputDirectory, final ThreadPoolExecutor executor, List<String> compileArtifactPaths, List<String> testArtifactPaths, File serverXmlFile,
             File bootstrapPropertiesFile, File jvmOptionsFile) throws Exception {
         this.buildFile = buildFile;
         this.outputDirectory = outputDirectory;
@@ -2452,6 +2479,15 @@ public abstract class DevUtil extends AbstractContainerSupportUtil {
                 }
             }
 
+            HashMap<Path, Boolean> webResourceMap = new HashMap<Path, Boolean>();
+            for (Path webResourceDir : webResourceDirs) {
+                webResourceMap.put(webResourceDir, false);
+                if (Files.exists(webResourceDir)) {
+                    registerAll(webResourceDir, executor);
+                    webResourceMap.put(webResourceDir, true);
+                }
+            }
+
             registerSingleFile(buildFile, executor);
 
             if (propertyFilesMap != null) {
@@ -2498,6 +2534,7 @@ public abstract class DevUtil extends AbstractContainerSupportUtil {
                     cleanTargetDir(outputDirectory);
                     sourceDirRegistered = false;
                 }
+
 
                 // check if testSourceDirectory has been added
                 if (!testSourceDirRegistered && this.testSourceDirectory.exists()
@@ -2550,7 +2587,7 @@ public abstract class DevUtil extends AbstractContainerSupportUtil {
                 // check if resourceDirectory has been added
                 for (File resourceDir : resourceDirs) {
                     if (!resourceMap.get(resourceDir) && resourceDir.exists()) {
-                        // added resource directory
+                    	resourceDirectoryCreated();
                         registerAll(resourceDir.getCanonicalFile().toPath(), executor);
                         resourceMap.put(resourceDir, true);
                     } else if (resourceMap.get(resourceDir) && !resourceDir.exists()) {
@@ -2558,6 +2595,23 @@ public abstract class DevUtil extends AbstractContainerSupportUtil {
                         warn("The resource directory " + resourceDir
                                 + " was deleted.  Restart liberty:dev mode for it to take effect.");
                         resourceMap.put(resourceDir, false);
+                    }
+                }
+
+                // check if webResourceDirectory has been added
+                for (Path webResourceDir : webResourceDirs) {
+                    if (!webResourceMap.get(webResourceDir) && Files.exists(webResourceDir)) {
+                    	updateLooseApp();
+                        registerAll(webResourceDir, executor);
+                        webResourceMap.put(webResourceDir, true);
+                    	runTestThread(false, executor, -1, false, false);
+                    } else if (webResourceMap.get(webResourceDir) && !Files.exists(webResourceDir)) {
+                        // deleted webResource directory
+                    	updateLooseApp();
+                        warn("The webResource directory " + webResourceDir
+                                + " was deleted.  Restart liberty:dev mode for it to take effect.");
+                        webResourceMap.put(webResourceDir, false);
+                    	runTestThread(false, executor, -1, false, false);
                     }
                 }
 
@@ -2948,8 +3002,17 @@ public abstract class DevUtil extends AbstractContainerSupportUtil {
                 resourceParent = resourceDir;
                 break;
             }
-        }
 
+        }
+        // webResource file check
+        Path webResourceParent = null;
+        for (Path webResourceDir : webResourceDirs) {
+            if (directory.startsWith(webResourceDir)) {
+                webResourceParent = webResourceDir;
+                break;
+            }
+
+        }
         if (fileChanged.isDirectory()) {
             // if new directory added, watch the entire directory
             if (changeType == ChangeType.CREATE) {
@@ -2964,9 +3027,8 @@ public abstract class DevUtil extends AbstractContainerSupportUtil {
 
         // reset this property in case it had been set to true
         System.setProperty(SKIP_BETA_INSTALL_WARNING, Boolean.FALSE.toString());
-
-        // src/main/java directory
-        if (directory.startsWith(srcPath)) {
+        
+        if (directory.startsWith(srcPath)) { // src/main/java directory
             ArrayList<File> javaFilesChanged = new ArrayList<File>();
             javaFilesChanged.add(fileChanged);
             if (fileChanged.exists() && fileChanged.getName().endsWith(".java")
@@ -2982,7 +3044,7 @@ public abstract class DevUtil extends AbstractContainerSupportUtil {
                 lastJavaSourceChange = System.currentTimeMillis();
                 deleteJavaSources.add(fileChanged);
             }
-        } else if (directory.startsWith(testSrcPath)) { // src/main/test
+        } else if (directory.startsWith(testSrcPath)) { // src/test/java
             ArrayList<File> javaFilesChanged = new ArrayList<File>();
             javaFilesChanged.add(fileChanged);
             if (fileChanged.exists() && fileChanged.getName().endsWith(".java")
@@ -3096,16 +3158,21 @@ public abstract class DevUtil extends AbstractContainerSupportUtil {
             debug("Resource dir: " + resourceParent.toString());
             if (fileChanged.exists() && (changeType == ChangeType.MODIFY
                     || changeType == ChangeType.CREATE)) {
-                copyFile(fileChanged, resourceParent, outputDirectory, null);
-
+            	resourceModifiedOrCreated(fileChanged, resourceParent, outputDirectory);
                 // run all tests on resource change
                 runTestThread(true, executor, numApplicationUpdatedMessages, false, false);
             } else if (changeType == ChangeType.DELETE) {
                 debug("Resource file deleted: " + fileChanged.getName());
-                deleteFile(fileChanged, resourceParent, outputDirectory, null);
+                resourceDeleted(fileChanged, resourceParent, outputDirectory);
+
                 // run all tests on resource change
                 runTestThread(true, executor, numApplicationUpdatedMessages, false, false);
             }
+        } else if (webResourceParent != null
+                && directory.startsWith(webResourceParent)) { // webResources
+            debug("webResource dir: " + webResourceParent.toString());
+            updateLooseApp();
+            runTestThread(true, executor, numApplicationUpdatedMessages, false, false);
         } else if (fileChanged.equals(buildFile)
                 && directory.startsWith(buildFile.getParentFile().getCanonicalFile().toPath())
                 && changeType == ChangeType.MODIFY) { // pom.xml
@@ -3139,7 +3206,19 @@ public abstract class DevUtil extends AbstractContainerSupportUtil {
         }
     }
 
-    /**
+	protected void resourceDirectoryCreated() throws IOException {
+	
+	}
+
+	protected void resourceModifiedOrCreated(File fileChanged, File resourceParent, File outputDirectory) throws IOException {
+        copyFile(fileChanged, resourceParent, outputDirectory, null);
+	}
+
+    protected void resourceDeleted(File fileChanged, File resourceParent, File outputDirectory) throws IOException {
+        deleteFile(fileChanged, resourceParent, outputDirectory, null);
+	}
+
+	/**
      * Unwatches all directories that were specified in Dockerfile COPY commands, then does a container
      * rebuild and restart.
      * 
@@ -3657,8 +3736,9 @@ public abstract class DevUtil extends AbstractContainerSupportUtil {
                     // redeploy app after compilation if not loose application
                     if (!isLooseApplication()) {
                         redeployApp();
+                    } else {
+                    	updateLooseApp();
                     }
-
                     info("Source compilation was successful.");
                 }
 
